@@ -1,0 +1,147 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  firstName       String
+  lastName        String
+  fullName        String
+  email           String   @unique
+  hashedPassword  String
+  role            Role     
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  CreatedPart            Part[]
+  SelledPart             Part[] @relation("Seller")
+}
+
+enum Role {
+  Admin
+  Manager
+  SalesManager
+}
+
+enum Status {
+  Stock
+  Basket
+  Sale
+}
+
+enum Type {
+  Part
+  Disc
+}
+
+model Part {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  partId          String   @unique
+  name            String
+  price           Float
+  description     String
+  original        Boolean?
+  condition       String
+  status          Status
+  // Type
+  type            Type?
+
+  // Manufacturer
+  manufacturer    Manufacturers[]
+  category        Categories?
+
+  creatorId       String
+  creator         User @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  sellerId        String?
+  seller          User? @relation("Seller", fields: [sellerId], references: [id], onDelete: Cascade, onUpdate: SetNull)
+
+  paymentId       String?
+  payment         Payment? @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Manufacturers {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  model           String?
+  toYear          Int
+  fromYear        Int
+
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+
+  partId          String?
+  part            Part? @relation(fields: [partId], references: [id], onDelete: Cascade)
+}
+
+model Categories {
+    id              String   @id @default(auto()) @map("_id") @db.ObjectId
+    categoryId      String
+    name            String
+    technical       Json
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    partId          String? @unique
+    part            Part? @relation(fields: [partId], references: [id])
+}
+
+enum PaymentType {
+  Cash
+  Card
+}
+model Payment {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  type            PaymentType
+  total           Int
+  name            String?
+  phone           String?
+  parts           Part[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+
+
+
+
+
+
+
+
+
+
+// Information Data
+
+model AllManufacturers {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  name              String
+  models            String[]
+}
+
+model AllCategory {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  categoryId        String   @unique
+  name              String   @unique
+  type              Type
+  technical         Json
+}
